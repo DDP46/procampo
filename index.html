@@ -15,17 +15,31 @@
       width: 80%;
       max-width: 600px;
     }
+    #autoplay-warning {
+      margin-top: 1rem;
+      color: darkred;
+      display: none;
+    }
+    #play-button {
+      display: none;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
   <h1>Audio sincronizzato con l'ora UTC</h1>
   <p>Ora UTC (da server): <span id="utc-time">Caricamento...</span></p>
-  <audio id="audio" controls></audio>
+  
+  <audio id="audio" controls autoplay></audio>
+  <p id="autoplay-warning">⚠️ L'autoplay è stato bloccato dal browser. Clicca su "Avvia audio" per ascoltarlo.</p>
+  <button id="play-button" onclick="playAudio()">Avvia audio</button>
 
   <script>
     const audio = document.getElementById('audio');
     const utcDisplay = document.getElementById('utc-time');
-    let timeOffset = 0; // Differenza in ms tra ora locale e ora UTC server
+    const warning = document.getElementById('autoplay-warning');
+    const playButton = document.getElementById('play-button');
+    let timeOffset = 0;
 
     async function fetchUTCTime() {
       try {
@@ -54,11 +68,17 @@
 
       if (audio.readyState >= 1) {
         audio.currentTime = timeInSeconds;
-        if (audio.paused) audio.play();
+        audio.play().catch(() => {
+          warning.style.display = 'block';
+          playButton.style.display = 'inline-block';
+        });
       } else {
         audio.addEventListener('loadedmetadata', () => {
           audio.currentTime = timeInSeconds;
-          audio.play();
+          audio.play().catch(() => {
+            warning.style.display = 'block';
+            playButton.style.display = 'inline-block';
+          });
         });
       }
     }
@@ -70,7 +90,10 @@
       setTimeout(() => {
         if (audio.readyState >= 1) {
           audio.currentTime = 0;
-          audio.play();
+          audio.play().catch(() => {
+            warning.style.display = 'block';
+            playButton.style.display = 'inline-block';
+          });
         }
         scheduleNextHourReset();
       }, msToNextHour);
@@ -83,6 +106,15 @@
       setInterval(updateUTCTimeDisplay, 1000);
       setInterval(syncAudioToUTC, 60000);
       scheduleNextHourReset();
+    }
+
+    function playAudio() {
+      audio.play().then(() => {
+        warning.style.display = 'none';
+        playButton.style.display = 'none';
+      }).catch(() => {
+        warning.style.display = 'block';
+      });
     }
 
     audio.src = 'http://procampo.altervista.org/caccia/_gta-sa/audio/flashfm_provasito.mp3';
