@@ -3,39 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Audio Autoplay Manuale</title>
+  <title>Audio sincronizzato con ora UTC</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       text-align: center;
-      margin-top: 100px;
-      background-color: #f0f0f0;
+      padding: 2rem;
     }
-    button {
-      font-size: 18px;
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
+    audio {
+      margin-top: 2rem;
+      width: 80%;
+      max-width: 600px;
     }
   </style>
 </head>
 <body>
+  <h1>Audio sincronizzato con l'ora UTC</h1>
+  <p>Ora UTC (da server): <span id="utc-time">Caricamento...</span></p>
+  <audio id="audio" controls></audio>
 
-  <h1>Benvenuto sul mio sito</h1>
-  <p>Clicca il pulsante qui sotto per avviare la musica.</p>
+  <script>
+    const audio = document.getElementById('audio');
+    const utcDisplay = document.getElementById('utc-time');
+    let timeOffset = 0; // Differenza in ms tra ora locale e ora UTC server
 
-  <audio autoplay id="audioPlayer">
-    <source src="http://procampo.altervista.org/caccia/_gta-sa/audio/flashfm_provasito.mp3" type="audio/mpeg">
-    Il tuo browser non supporta l'elemento audio.
-  </audio>
+    async function fetchUTCTime() {
+      try {
+        const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+        const data = await res.json();
+        const serverTime = new Date(data.utc_datetime).getTime();
+        const localTime = Date.now();
+        timeOffset = serverTime - localTime;
+      } catch (err) {
+        console.error('Errore nel recuperare UTC:', err);
+      }
+    }
 
-  <button onclick="document.getElementById('audioPlayer').play()">Avvia Audio</button>
+    function getSyncedUTCTime() {
+      return new Date(Date.now() + timeOffset);
+    }
 
+    function updateUTCTimeDisplay() {
+      utcDisplay.textContent = getSyncedUTCTime().toUTCString();
+    }
+
+    function syncAudioToUTC() {
+      const now = getSyncedUTCTime();
+      const secondsInHour = now.getUTCMinutes() * 60 + now.getUTCSeconds();
+      const timeInSeconds = secondsInHour % 3600;
+
+      if (audio.readyState >= 1) {
+        audio.currentTime = timeInSeconds;
+        if (audio.paused) audio.play();
+      } else {
+        audio.addEventListener('loadedmetadata', () => {
+          audio.currentTime = timeInSeconds;
+          audio.play();
+        });
+      }
+    }
+
+    function scheduleNextHourReset() {
+      const now = getSyncedUTCTime();
+      const msToNextHour = 3600000 - (now.getUTCMinutes() * 60000 + now.getUTCSeconds() * 1000 + now.getUTCMilliseconds());
+
+      setTimeout(() => {
+        if (audio.readyState >= 1) {
+          audio.currentTime = 0;
+          audio.play();
+        }
+        scheduleNextHourReset();
+      }, msToNextHour);
+    }
+
+    async function init() {
+      await fetchUTCTime();
+      updateUTCTimeDisplay();
+      syncAudioToUTC();
+      setInterval(updateUTCTimeDisplay, 1000);
+      setInterval(syncAudioToUTC, 60000);
+      scheduleNextHourReset();
+    }
+
+    audio.src = 'http://procampo.altervista.org/caccia/_gta-sa/audio/flashfm_provasito.mp3';
+    init();
+  </script>
 </body>
 </html>
