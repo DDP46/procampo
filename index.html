@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Autoplay Manuale</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 100px;
+      background-color: #f0f0f0;
+    }
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Benvenuto sul mio sito</h1>
+  <p>Clicca il pulsante qui sotto per avviare la musica.</p>
+
+  <audio autoplay id="audioPlayer">
+    <source src="http://procampo.altervista.org/caccia/_gta-sa/audio/flashfm_provasito.mp3" type="audio/mpeg">
+    Il tuo browser non supporta l'elemento audio.
+  </audio>
+
+  <button onclick="document.getElementById('audioPlayer').play()">Avvia Audio</button>
+
+</body>
+</html>
